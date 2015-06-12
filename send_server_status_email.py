@@ -36,9 +36,9 @@ CommandResult = types.SimpleNamespace
 
 
 def ValidateConfig(config):
-  assert isinstance(config.get('smtp'), dict), (
-      'Missing \'smtp\' attribute')
+  config.setdefault('smtp', {})
   config['smtp'].setdefault('server', 'localhost')
+  config['smtp'].setdefault('login', False)
   if config['smtp'].get('login'):
     assert 'user' in config['smtp'], (
         '\'user\' attribute must be specified if SMTP requires login')
