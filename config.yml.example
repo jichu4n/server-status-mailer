@@ -48,5 +48,8 @@ commands:
     command: "top -bcn1"
     attachment_only: true
   - label: Auth Log
-    command: "sudo cat /var/log/auth.log"
+    command: "sudo tail -n 10000 /var/log/auth.log"
+    attachment_only: true
+  - label: Postfix Log
+    command: "sudo tail -n 10000 /var/log/mail.log"
     attachment_only: true

@@ -203,9 +203,15 @@ if __name__ == '__main__':
           config['attachment']['command_result_file_name'].format(
             **command_result_context))
       logging.info('Creating and adding %s', command_result_file_name)
-      zip_file.writestr(
+      command_result_attachment_str = attachment_template.render(
+          command_result_context).strip()
+      zip_file.writestr(command_result_file_name, command_result_attachment_str)
+      logging.info(
+          'Size of %s: %.01fK',
           command_result_file_name,
-          attachment_template.render(command_result_context).strip())
+          len(command_result_attachment_str) / 1024)
+  attachment_bytes = raw_file.getvalue()
+  logging.info('Total attachment size: %.01fK', len(attachment_bytes) / 1024)
   attachment = email.mime.application.MIMEApplication(
       raw_file.getvalue(), 'zip')
   attachment_file_name = config['attachment']['file_name'].format(
