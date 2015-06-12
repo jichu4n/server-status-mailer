@@ -193,4 +193,6 @@ if __name__ == '__main__':
   logging.info('Transferring message')
   smtp_conn.send_message(message)
 
+  smtp_conn.quit()
+
   logging.info('Done.')

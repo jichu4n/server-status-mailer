@@ -1,0 +1,44 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                                                             #
+#    Copyright (C) 2015 Chuan Ji <ji@chu4n.com>                               #
+#                                                                             #
+#    Licensed under the Apache License, Version 2.0 (the "License");          #
+#    you may not use this file except in compliance with the License.         #
+#    You may obtain a copy of the License at                                  #
+#                                                                             #
+#     http://www.apache.org/licenses/LICENSE-2.0                              #
+#                                                                             #
+#    Unless required by applicable law or agreed to in writing, software      #
+#    distributed under the License is distributed on an "AS IS" BASIS,        #
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+#    See the License for the specific language governing permissions and      #
+#    limitations under the License.                                           #
+#                                                                             #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Email configuration.
+smtp:
+  server: mail.example.com
+  port: 587
+  login: true
+  user: someone@example.com
+  password: "password"
+  ssl: false
+  tls: true
+from: "\"Server Status Mailer\" <noreply@example.com>"
+to:
+  - "\"Admin\" <admin@example.com>"
+subject: "Server status for {host} [{now_str}]"
+date_time_format: "%c"
+
+# Commands to run.
+commands:
+  - label: Uptime & Load
+    command: "uptime"
+  - label: Memory
+    command: "free -m"
+  - label: Disk
+    command: "df -h"
+  - label: Users
+    command: "w"
+
