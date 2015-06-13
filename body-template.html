@@ -30,6 +30,7 @@
 <br>
 
 {% for command_result in command_results %}
+{% if not command_result.attachment_only %}
 <p class="h4" style="margin:10px 0;font-family:inherit;font-weight:bold;line-height:1;color:inherit;text-rendering:optimizelegibility;font-size:18px;line-height:20px">{{command_result.label}}</p>
 <table>
   <tbody>
@@ -63,7 +64,24 @@
     </tr>
   </tbody>
 </table>
+{% endif %}
 {% endfor %}
+
+{% if attachment_only_command_results %}
+<p class="h4" style="margin:10px 0;font-family:inherit;font-weight:bold;line-height:1;color:inherit;text-rendering:optimizelegibility;font-size:18px;line-height:20px">
+  Full Status
+</p>
+<p>
+  Please consult the attachment for further information:
+</p>
+<ul>
+  {% for command_result in attachment_only_command_results %}
+  <li>
+  {{command_result.label}} (<code style="font-family:Monaco,Menlo,Consolas,'Courier New',monospace;font-size:11px;color:#333;-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px;padding:2px 4px;color:#d14;background-color:#f7f7f9;border:1px solid #e1e1e8">{{command_result.command}}</code>)
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
 
 <hr>
 <p class="muted" style="color:#999">

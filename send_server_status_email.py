@@ -20,16 +20,21 @@
 import argparse
 import concurrent.futures
 import datetime
+import email.mime.application
+import email.mime.multipart
 import email.mime.text
+import io
+import jinja2
 import logging
 import multiprocessing
-import jinja2
 import os
+import slugify
 import smtplib
 import socket
 import subprocess
 import types
 import yaml
+import zipfile
 
 
 CommandResult = types.SimpleNamespace
@@ -56,6 +61,12 @@ def ValidateConfig(config):
 
   config.setdefault('date_time_format', '%c')
 
+  config.setdefault('attachment', {})
+  config['attachment'].setdefault(
+      'file_name', 'Server status for {host} [{now_str}].zip')
+  config['attachment'].setdefault(
+      'command_result_file_name', '{label_slug}.txt')
+
   assert isinstance(config.get('commands'), list), (
       'Missing \'commands\' attribute')
   for i, command in enumerate(config['commands']):
@@ -63,6 +74,9 @@ def ValidateConfig(config):
         'Command %d missing \'label\' attribute' % i)
     assert 'command' in command, (
         'Command %d missing \'command\' attribute' % i)
+    command.setdefault('attachment_only', False)
+    command.setdefault(
+        'label_slug', slugify.slugify(command['label']))
 
 
 def RunCommand(command_dict):
@@ -114,6 +128,10 @@ if __name__ == '__main__':
       '--body-template',
       help='Path to a Jinja2 template file for the email body',
       default=os.path.join(script_dir, 'body-template.html'))
+  parser.add_argument(
+      '--attachment-template',
+      help='Path to a Jinja2 template file for command result attachment files',
+      default=os.path.join(script_dir, 'attachment-template.txt'))
   try:
     num_cpus = multiprocessing.cpu_count() * 2
   except NotImplementedError:
@@ -137,6 +155,11 @@ if __name__ == '__main__':
   with open(args['body_template'], 'r') as body_template_file:
     body_template = jinja2.Template(
         body_template_file.read())
+  logging.info(
+      'Loading attachment template from %s', args['attachment_template'])
+  with open(args['attachment_template'], 'r') as attachment_template_file:
+    attachment_template = jinja2.Template(
+        attachment_template_file.read())
 
   # Run commands and gather results.
   with concurrent.futures.ThreadPoolExecutor(
@@ -150,22 +173,54 @@ if __name__ == '__main__':
     command_result.execution_time_seconds = (
         command_result.end_time - command_result.start_time).total_seconds()
 
-  logging.info('Generating email')
+  logging.info('Generating email body')
   now = datetime.datetime.now()
   context = {
       'host': socket.gethostname(),
       'now': now,
       'now_str': now.strftime(config['date_time_format']),
       'command_results': command_results,
+      'attachment_only_command_results': [
+          command_result
+          for command_result in command_results
+          if command_result.attachment_only
+      ],
       'args': args,
       'config': config,
   }
-  message = email.mime.text.MIMEText(
+  message_body = email.mime.text.MIMEText(
       body_template.render(context).strip(), 'html')
+  logging.info('Generated email body:\n%s', message_body.as_string())
+
+  logging.info('Generating attachment')
+  raw_file = io.BytesIO()
+  with zipfile.ZipFile(raw_file, 'w') as zip_file:
+    for command_result in command_results:
+      command_result_context = context.copy()
+      command_result_context['command_result'] = command_result
+      command_result_context.update(vars(command_result))
+      command_result_file_name = (
+          config['attachment']['command_result_file_name'].format(
+            **command_result_context))
+      logging.info('Creating and adding %s', command_result_file_name)
+      zip_file.writestr(
+          command_result_file_name,
+          attachment_template.render(command_result_context).strip())
+  attachment = email.mime.application.MIMEApplication(
+      raw_file.getvalue(), 'zip')
+  attachment_file_name = config['attachment']['file_name'].format(
+      **command_result_context)
+  attachment['Content-Type'] = (
+      'application/zip; name=%s' % attachment_file_name)
+  attachment['Content-Disposition'] = (
+      'attachment; filename=%s' % attachment_file_name)
+
+  message = email.mime.multipart.MIMEMultipart()
   message['From'] = config['from']
   message['To'] = ', '.join(config['to'])
   message['Subject'] = config['subject'].format(**context)
-  logging.info('Generated email:\n%s', message.as_string())
+  message.attach(message_body)
+  message.attach(attachment)
 
   logging.info(
       'Sending email to %s via %s on port %d',

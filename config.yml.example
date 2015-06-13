@@ -30,6 +30,9 @@ to:
   - "\"Admin\" <admin@example.com>"
 subject: "Server status for {host} [{now_str}]"
 date_time_format: "%c"
+attachment:
+  file_name: "Server status for {host} [{now_str}].zip"
+  command_result_file_name: "{label_slug}.txt"
 
 # Commands to run.
 commands:
@@ -41,4 +44,9 @@ commands:
     command: "df -h"
   - label: Users
     command: "w"
-
+  - label: Top
+    command: "top -bcn1"
+    attachment_only: true
+  - label: Auth Log
+    command: "sudo cat /var/log/auth.log"
+    attachment_only: true
