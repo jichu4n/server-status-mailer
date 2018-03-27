@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                                                                             #
-#    Copyright (C) 2015 Chuan Ji <ji@chu4n.com>                               #
+#    Copyright (C) 2015-2018 Chuan Ji <jichu4n@chu4n.com>                     #
 #                                                                             #
 #    Licensed under the Apache License, Version 2.0 (the "License");          #
 #    you may not use this file except in compliance with the License.         #
@@ -23,6 +23,7 @@ import datetime
 import email.mime.application
 import email.mime.multipart
 import email.mime.text
+import email.utils
 import io
 import jinja2
 import logging
@@ -225,6 +226,7 @@ if __name__ == '__main__':
   message['From'] = config['from']
   message['To'] = ', '.join(config['to'])
   message['Subject'] = config['subject'].format(**context)
+  message['Date'] = email.utils.formatdate(localtime=True)
   message.attach(message_body)
   message.attach(attachment)
 
